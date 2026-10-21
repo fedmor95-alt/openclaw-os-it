@@ -57,6 +57,12 @@ export async function buildConnectParams(
     client: {
       id: CLIENT_ID,
       version: CLIENT_VERSION,
+      // "dev" skips the gateway's Control UI build-id pin. That pin only
+      // applies when Origin matches the gateway host (our Electron main
+      // process rewrites WS Origin to the gateway https origin so the
+      // request passes allowedOrigins). Without this, connect fails with
+      // PROTOCOL_MISMATCH / "Control UI updated; reload this page".
+      buildId: "dev",
       platform: "web",
       mode: CLIENT_MODE,
     },

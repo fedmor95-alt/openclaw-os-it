@@ -96,6 +96,8 @@ export interface ConnectParams {
   client?: {
     id: GatewayClientId;
     version?: string;
+    /** Gateway Control UI build pin; use `"dev"` for custom clients. */
+    buildId?: string;
     platform?: string;
     mode?: GatewayClientMode;
     displayName?: string;

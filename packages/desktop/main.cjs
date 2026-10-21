@@ -4,7 +4,7 @@
  * Non legge né registra mai il token del gateway.
  */
 
-const { app, BrowserWindow, shell, Notification } = require("electron");
+const { app, BrowserWindow, shell, Notification, session } = require("electron");
 const http = require("http");
 const path = require("path");
 const fs = require("fs");
@@ -14,6 +14,39 @@ const PREFERRED_PORT = 18790;
 let mainWindow = null;
 let staticServer = null;
 let uiOrigin = null;
+
+/**
+ * Il gateway OpenClaw (control UI / client id openclaw-control-ui) rifiuta il
+ * RPC `connect` se l'header Origin del WebSocket non è in
+ * gateway.controlUi.allowedOrigins. L'UI Electron gira su http://127.0.0.1,
+ * quindi Chromium invierebbe Origin: http://127.0.0.1:… → UNREACHABLE.
+ * Riscrittura: per WS verso host non-loopback, Origin = http(s)://host del gateway.
+ */
+function installGatewayOriginRewrite() {
+  session.defaultSession.webRequest.onBeforeSendHeaders((details, callback) => {
+    const requestHeaders = { ...details.requestHeaders };
+    try {
+      const target = new URL(details.url);
+      const isWebsocket =
+        details.resourceType === "websocket" ||
+        target.protocol === "ws:" ||
+        target.protocol === "wss:";
+      const isLoopbackTarget =
+        target.hostname === "127.0.0.1" ||
+        target.hostname === "localhost" ||
+        target.hostname === "[::1]" ||
+        target.hostname === "::1";
+      if (isWebsocket && !isLoopbackTarget) {
+        const scheme =
+          target.protocol === "ws:" || target.protocol === "http:" ? "http" : "https";
+        requestHeaders.Origin = `${scheme}://${target.host}`;
+      }
+    } catch {
+      // lascia gli header invariati
+    }
+    callback({ requestHeaders });
+  });
+}
 
 function resolveUiRoot() {
   // In produzione: resources/ui (extraResources). In dev: claw-client/out.
@@ -102,6 +135,8 @@ app.whenReady().then(async () => {
     app.quit();
     return;
   }
+
+  installGatewayOriginRewrite();
 
   if (Notification.isSupported()) {
     // Permessi notifiche: su Windows bastano le Notification Web API nella pagina.
