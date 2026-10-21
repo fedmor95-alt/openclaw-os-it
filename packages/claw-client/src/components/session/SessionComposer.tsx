@@ -779,8 +779,8 @@ export function SessionComposer({
                 rotation.current || isCommandInput
                   ? ""
                   : effectiveSendKey(prefs) === "mod-enter"
-                    ? "Type / for commands · ⌘↵ to send"
-                    : "Type / for commands"
+                    ? "Scrivi un messaggio · Ctrl+Invio per inviare"
+                    : "Scrivi un messaggio…"
               }
               className="max-h-48 min-h-12 w-full resize-none bg-transparent py-2xs text-sm leading-5 text-text-neutral-primary outline-none placeholder:text-text-neutral-tertiary"
               onKeyDown={(event) => {
@@ -896,7 +896,11 @@ export function SessionComposer({
             variant="ghost"
             size="md"
             title={
-              isRunning ? "Stop" : parsedCommand ? `Run /${parsedCommand.command.name}` : "Send"
+              isRunning
+                ? "Interrompi"
+                : parsedCommand
+                  ? `Esegui /${parsedCommand.command.name}`
+                  : "Invia"
             }
             disabled={!isRunning && isDisabled}
             onClick={
@@ -918,7 +922,7 @@ export function SessionComposer({
             icon={Plus}
             variant="tertiary"
             size="md"
-            title="Add context / attach files"
+            title="Allega file o immagini"
             onClick={onPickFiles}
             className="hover:!bg-transparent dark:hover:!bg-transparent"
           />
@@ -927,16 +931,13 @@ export function SessionComposer({
               icon={Mic}
               variant={stt.listening ? "primary" : "tertiary"}
               size="md"
-              title={stt.listening ? "Stop dictation" : "Dictate (speech-to-text)"}
+              title={stt.listening ? "Ferma dettatura" : "Dettatura vocale"}
               className={stt.listening ? "" : "hover:!bg-transparent dark:hover:!bg-transparent"}
               onClick={() => {
                 if (stt.listening) {
                   stt.stop();
                   return;
                 }
-                // Capture the current text once so each interim update
-                // appends to the original baseline rather than
-                // compounding the streaming transcript.
                 sttBaselineRef.current = textContent.replace(/\s+$/, "");
                 stt.start((text) => {
                   const sep = sttBaselineRef.current ? " " : "";
@@ -947,7 +948,7 @@ export function SessionComposer({
           ) : null}
         </div>
         <div className="flex flex-wrap items-center gap-3xs font-body text-sm text-text-neutral-tertiary">
-          {contextTokens != null && contextLimit && contextLimit > 0 ? (
+          {prefs.showAdvanced && contextTokens != null && contextLimit && contextLimit > 0 ? (
             <>
               <ContextRing used={contextTokens} limit={contextLimit} breakdown={contextBreakdown} />
               <span aria-hidden="true" className="ml-2xs text-text-neutral-tertiary/60">
@@ -955,7 +956,7 @@ export function SessionComposer({
               </span>
             </>
           ) : null}
-          {onModelChange
+          {prefs.showAdvanced && onModelChange
             ? (() => {
                 const hint = agentDefaultModelId ?? gatewayDefaultModelId;
                 const defaultModel = hint
@@ -1003,21 +1004,21 @@ export function SessionComposer({
                 );
               })()
             : null}
-          {onModelChange && onEffortChange ? (
+          {prefs.showAdvanced && onModelChange && onEffortChange ? (
             <span aria-hidden="true" className="text-text-neutral-tertiary/60">
               ·
             </span>
           ) : null}
-          {onEffortChange ? (
+          {prefs.showAdvanced && onEffortChange ? (
             <TextButtonSelect
               value={currentEffort}
               onChange={onEffortChange}
-              title="Reasoning effort"
+              title="Effort di ragionamento"
               options={THINKING_LEVELS.filter(
                 (t) => t.value === "" || !effortOptions || effortOptions.includes(t.value),
               ).map((t) => ({
                 value: t.value,
-                label: t.value === "" && effortDefault ? `Default (${effortDefault})` : t.label,
+                label: t.value === "" && effortDefault ? `Predefinito (${effortDefault})` : t.label,
               }))}
             />
           ) : null}

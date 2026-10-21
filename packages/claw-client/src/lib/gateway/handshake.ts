@@ -70,7 +70,7 @@ export async function buildConnectParams(
       signedAt: signedAtMs,
       nonce,
     },
-    locale: "en-US",
-    userAgent: `claw/${CLIENT_VERSION}`,
+    locale: "it-IT",
+    userAgent: `openclaw-it/${CLIENT_VERSION}`,
   };
 }

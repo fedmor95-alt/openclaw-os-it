@@ -65,22 +65,20 @@ export function EmptyAgentHero({ agentName, composer }: Props) {
   const { assistantName } = usePreferences();
   if (isLoadingMessages || messages.length > 0) return null;
 
-  const displayName = assistantName.trim() || agentName || "your agent";
+  const displayName = assistantName.trim() || agentName || "il tuo agente";
 
   return (
     <div className="flex h-full w-full flex-col items-center justify-center px-ml py-3xl">
       <div className="flex w-full max-w-2xl flex-col items-center">
-        {/* Header: small square icon tile + name + description */}
         <div className="flex w-full flex-col items-center gap-s">
           <div className="flex h-9 w-9 items-center justify-center rounded-md border border-border-default/70 bg-background text-text-info-primary shadow-sm dark:border-border-default/16 dark:bg-elevated-light">
             <Cpu size={16} />
           </div>
           <h2 className="text-center font-heading text-lg font-bold text-text-neutral-primary">
-            Hi, I&apos;m {displayName}
+            Ciao, sono {displayName}
           </h2>
           <p className="max-w-md text-center font-body text-sm text-text-neutral-tertiary">
-            Ask me to build an app, schedule tasks, pull data from a site, and run everything
-            automatically.
+            Scrivi un messaggio qui sotto, oppure allega un’immagine o un file.
           </p>
         </div>
 

@@ -1,0 +1,62 @@
+{
+  "name": "@openclaw-it/desktop",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Client desktop Windows per OpenClaw (Electron)",
+  "main": "main.cjs",
+  "scripts": {
+    "start": "electron .",
+    "package": "electron-builder --win --x64",
+    "package:dir": "electron-builder --win --x64 --dir"
+  },
+  "dependencies": {
+    "serve-handler": "^6.1.6"
+  },
+  "devDependencies": {
+    "electron": "^37.2.0",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "it.openclaw.client",
+    "productName": "OpenClaw",
+    "copyright": "MIT",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "main.cjs",
+      "preload.cjs",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "../claw-client/out",
+        "to": "ui",
+        "filter": ["**/*"]
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
+      ],
+      "artifactName": "OpenClaw-${version}-${arch}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "OpenClaw"
+    },
+    "portable": {
+      "artifactName": "OpenClaw-${version}-portable.exe"
+    }
+  }
+}

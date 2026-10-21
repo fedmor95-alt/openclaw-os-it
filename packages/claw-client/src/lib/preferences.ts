@@ -29,14 +29,23 @@ export interface Preferences {
   assistantName: string;
   /** Accent skin layered over the dark/light base theme. */
   themeSkin: ThemeSkin;
+  /**
+   * Mostra pannelli tecnici (tool call, reasoning, modello, effort, token).
+   * Di default nascosti — stile client semplice.
+   */
+  showAdvanced: boolean;
+  /** Notifiche desktop del sistema quando un agente risponde in background. */
+  desktopNotifications: boolean;
 }
 
 export const DEFAULT_PREFERENCES: Preferences = {
   sendKey: "auto",
-  notificationSound: false,
+  notificationSound: true,
   fontSize: "md",
   assistantName: "",
   themeSkin: "default",
+  showAdvanced: false,
+  desktopNotifications: true,
 };
 
 const STORAGE_KEY = "claw-prefs-v1";

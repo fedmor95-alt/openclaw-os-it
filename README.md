@@ -1,183 +1,91 @@
-<div align="center">
+# OpenClaw — client desktop italiano
 
-<a href="https://www.openui.com/openclaw-os" target="_blank" rel="noopener noreferrer">
-<img src="./assets/openclaw-os-hero.png" alt="OpenClaw OS — the workspace for OpenClaw" width="100%">
-</a>
+Client a finestra semplice per parlare con gli agenti del tuo gateway OpenClaw. Interfaccia in italiano, stile pulito (lista agenti a sinistra, chat a destra). Niente pannelli tecnici in vista: log, tool call e opzioni avanzate stanno sotto **Impostazioni → Avanzate**.
 
-# OpenClaw OS — The default workspace for OpenClaw
+Fork di [OpenClaw OS](https://github.com/thesysdev/openclaw-os), adattato per uso desktop su Windows.
 
-[![Build & Check](https://github.com/thesysdev/openclaw-os/actions/workflows/build.yml/badge.svg)](https://github.com/thesysdev/openclaw-os/actions/workflows/build.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
-[![Discord](https://img.shields.io/badge/Discord-Chat-7289da?logo=discord&logoColor=white)](https://discord.com/invite/Pbv5PsqUSv)
+## Requisiti
 
-</div>
+- Windows 10/11
+- Node.js ≥ 20
+- [pnpm](https://pnpm.io/) ≥ 9
+- Gateway OpenClaw raggiungibile (di default via Tailscale: `wss://steamdeck.tail9f17e3.ts.net`)
 
-OpenClaw reads emails, manages files, runs scripts, and schedules work across tools. But people drive it from Telegram, Discord, or Slack. Chat falls apart fast: everything scrolls away, work gets buried, and you can't see what's running or done.
-
-**OpenClaw-OS** is the missing interface. A workspace built for your agents. Sessions stay organized. Answers render as live, interactive apps (charts, tables, forms, dashboards) that persist, refresh with new data, and update from a prompt instead of a rebuild.
-
----
-
-[Website](https://openui.com/openclaw-os) · [OpenUI Docs](https://openui.com) · [OpenClaw](https://github.com/openclaw/openclaw) · [Discord](https://discord.com/invite/Pbv5PsqUSv) · [Contributing](./CONTRIBUTING.md) · [Code of Conduct](./CODE_OF_CONDUCT.md) · [Security](./SECURITY.md) · [License](./LICENSE)
-
----
-## Quick Start
-
-Install OpenClaw OS into an existing OpenClaw setup with the command for your platform:
-
-macOS or Linux:
-
-```bash
-curl -fsSL https://openui.com/openclaw-os/install.sh | bash
-```
-
-Windows:
+## Installazione (sviluppo)
 
 ```powershell
-powershell -c "irm https://openui.com/openclaw-os/install.ps1 | iex"
+git clone <url-di-questo-repo>
+cd openclaw-os-it
+pnpm install
 ```
 
-The installer downloads the latest source, builds the workspace UI, registers it as an OpenClaw plugin, restarts the gateway, and opens the dashboard in your browser.
+## Configurazione del token
 
-or through published package
+1. Avvia l’app (vedi sotto).
+2. Si apre **Impostazioni**.
+3. Controlla l’**URL del gateway** (precompilato con `wss://steamdeck.tail9f17e3.ts.net`).
+4. Incolla il **token** del gateway (`gateway.auth.token` nella config OpenClaw sul server).
+5. Clicca **Salva e connetti**.
 
-```bash
-openclaw plugins install @openuidev/openclaw-os-plugin
-openclaw gateway restart
-openclaw os url
+Il token resta solo in `localStorage` su questo PC. Non viene scritto nel codice, nei commit o nei log.
+
+Se il gateway chiede l’approvazione del dispositivo, esegui sul server il comando mostrato a schermo (`openclaw devices approve …`).
+
+## Avvio in sviluppo (browser)
+
+```powershell
+pnpm dev
 ```
 
+Apri `http://localhost:18790`.
 
-> The workspace runs at `http://localhost:18789/plugins/openclawos`; run **`openclaw os url`** for the pre-authenticated URL.
->
-> Don't have OpenClaw yet? Install it first from [openclaw.ai](https://openclaw.ai/install.sh), then run the matching command above.
->
-> Installing from a local clone: see [`CONTRIBUTING.md`](./CONTRIBUTING.md).
+## App desktop Windows
 
----
+Costruisce l’UI statica e la pacchetta con Electron:
 
-## What you get
+```powershell
+# Solo cartella eseguibile (più veloce, per prova)
+pnpm desktop:dir
 
-- **A workspace, not a chat log.** Agents, sessions, apps, artifacts, notifications, and crons are all first-class surfaces in the sidebar — structured and easy to navigate.
-- **Live, interactive apps.** Agents render dashboards, charts, tables, and forms as React components that stream in as the model writes them. No copy-pasting JSON, no re-prompting for the same data.
-- **Persistent and refinable.** Apps and artifacts are stored and re-rendered across turns. Update them with a prompt — they update in place instead of being regenerated from scratch.
-- **Mobile + desktop.** Responsive UI; the same workspace works on your laptop, phone, or tablet.
-- **Lives with your gateway.** The workspace is served by your OpenClaw gateway itself. If your gateway is remote, the workspace is reachable wherever the gateway is — no separate hosting, no tunnel, no CORS or allowed-origins config.
-- **Session-scoped.** Only sessions opened from OpenClaw OS get the OpenUI prompt. CLI runs, scripts, and other clients on the same gateway are unaffected.
-
----
-
-
-
-## How it works
-
-OpenClaw OS ships as a single OpenClaw plugin. When the gateway loads it, two things happen:
-
-1. **The workspace UI is served from the gateway** at `http://<gateway>/plugins/openclawos`. The plugin bundles the prebuilt static export of the web client and serves it over the gateway's own HTTP route — no separate Next.js process, no tunnel, no CORS dance.
-2. **Agent runs from OpenClaw OS get an OpenUI prompt.** A `before_prompt_build` hook detects sessions originating from the workspace (by session-key suffix) and prepends an OpenUI Lang system prompt, so the LLM emits structured component markup the workspace can render.
-
-The workspace then connects back to the same gateway over the same-origin WebSocket and renders the streaming output as live React components.
-
-```mermaid
-flowchart LR
-    U["You"] -->|"open /plugins/openclawos"| G["OpenClaw Gateway"]
-    G -->|"serves bundled UI"| W["OpenClaw OS workspace"]
-    W -->|"WebSocket"| G
-    G --> A["OpenClaw Agent"]
-    A -->|"OpenUI Lang stream"| W
-    W --> R["Live apps, dashboards, charts"]
+# Installer NSIS + portable .exe
+pnpm desktop:build
 ```
 
-See [`AGENTS.md`](./AGENTS.md) for the full protocol, the plugin detection mechanism, and the agent / session / thread mental model.
-
----
-
-## Packages
-
-| Package | Description |
-| :--- | :--- |
-| [`@openuidev/openclaw-os-plugin`](./packages/claw-plugin) | The OpenClaw plugin. Bundles the workspace UI, serves it over the gateway's HTTP route, and injects the OpenUI prompt for OpenClaw OS sessions. |
-| [`@openuidev/claw-client`](./packages/claw-client) | The workspace UI itself — a Next.js app rendered with the OpenUI React renderer. Statically exported, then bundled into the plugin. |
-
-Both packages live in this monorepo and are linked via pnpm workspaces. They are versioned together for now.
-
----
-
-## Repository structure
+Gli artefatti finiscono in:
 
 ```
-openclaw-os/
-├── packages/
-│   ├── claw-client/      # Workspace UI (Next.js, statically exported)
-│   └── claw-plugin/      # OpenClaw plugin (bundles + serves the UI)
-├── scripts/              # Local helpers (open dashboard, etc.)
-├── .github/              # CI workflows + issue / PR templates
-├── AGENTS.md             # Protocol and mental-model deep dive
-├── CONTRIBUTING.md       # Development workflow
-└── README.md             # You are here
+packages/desktop/release/
 ```
 
-Good places to start:
+Tipici file:
 
-- [`packages/claw-client`](./packages/claw-client) — the workspace UI
-- [`packages/claw-plugin`](./packages/claw-plugin) — the plugin that ships and serves it
-- [`AGENTS.md`](./AGENTS.md) — gateway protocol & session model
-- [`CONTRIBUTING.md`](./CONTRIBUTING.md) — local setup, code style, PR workflow
+- `OpenClaw Setup … .exe` — installer
+- `OpenClaw-…-portable.exe` — versione portable
+- `win-unpacked/OpenClaw.exe` — dopo `desktop:dir`
 
----
+Avvio rapido senza installer (dopo `desktop:dir`):
 
-## Scripts
-
-Run from the repo root — every script fans out across the workspace.
-
-```bash
-pnpm build         # build every package
-pnpm lint          # ESLint check across packages
-pnpm lint:fix      # ESLint auto-fix
-pnpm format        # Prettier check
-pnpm format:fix    # Prettier write
-pnpm typecheck     # tsc --noEmit across packages
-pnpm test          # Vitest across packages
-pnpm ci            # full lint + format + typecheck + build (matches CI)
+```powershell
+.\packages\desktop\release\win-unpacked\OpenClaw.exe
 ```
 
----
+Oppure in modalità sviluppo Electron (serve già `out/`):
 
-## Powered by OpenUI
+```powershell
+pnpm desktop:dev
+```
 
-The workspace renders agent output using [OpenUI](https://openui.com), an open standard for generative UI. Agents emit OpenUI Lang — a structured, streamable language designed for model-generated UI:
+## Uso quotidiano
 
-- **Streaming output** — components render incrementally as tokens arrive.
-- **Token efficient** — up to 67% fewer tokens than equivalent JSON.
-- **Controlled rendering** — agents can only emit the components defined in the workspace's library.
-- **Typed component contracts** — props are declared up front with Zod schemas.
+1. Apri OpenClaw.
+2. Nella barra laterale scegli un agente (icona colorata + nome).
+3. Scrivi, allega immagini/file, leggi le risposte in streaming (markdown).
+4. Se la finestra non è in primo piano, ricevi una notifica desktop e un badge sui non letti.
 
-See the [OpenUI documentation](https://openui.com) and [token efficiency benchmarks](https://github.com/thesysdev/openui#token-efficiency-benchmarks) for details.
+## Protocollo
 
----
+Il client negozia il protocollo gateway **v4** (già presente nel codice originale).
 
-## Documentation
+## Licenza
 
-- [openui.com/openclaw-os](https://openui.com/openclaw-os) — landing page, demos, install
-- [openui.com](https://openui.com) — OpenUI Lang reference, component library, and renderer docs
-- [`AGENTS.md`](./AGENTS.md) — OpenClaw protocol, plugin detection, session model
-- [`packages/claw-client/README.md`](./packages/claw-client/README.md) — workspace UI: local dev, env, layout
-- [`packages/claw-plugin/README.md`](./packages/claw-plugin/README.md) — plugin: install, prompt regeneration
-
----
-
-## Community
-
-- [Discord](https://discord.com/invite/Pbv5PsqUSv) — Ask questions, share what you're building
-- [GitHub Issues](https://github.com/thesysdev/openclaw-os/issues) — Report bugs or request features
-- [GitHub Discussions](https://github.com/thesysdev/openclaw-os/discussions) — Longer-form questions and ideas
-
----
-
-## Contributing
-
-Contributions are welcome. See [`CONTRIBUTING.md`](./CONTRIBUTING.md) for the local setup, the code-style rules, and the pull request workflow.
-
-## License
-
-This project is available under the terms described in [`LICENSE`](./LICENSE).
+MIT — vedi `LICENSE`.

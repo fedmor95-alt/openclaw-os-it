@@ -4,6 +4,7 @@ import { COMPACTION_SENTINEL, ERROR_SENTINEL, GATEWAY_SENTINEL } from "@/lib/cha
 import { extractAssistantTimeline } from "@/lib/chat/timeline";
 import { separateContentAndContext, wrapContext } from "@/lib/content-parser";
 import { parseInlineResponse } from "@/lib/detection";
+import { usePreferences } from "@/lib/preferences";
 import { buildContinueConversationPayload, handleOpenUrlAction } from "@/lib/renderer-actions";
 import type { AssistantMessage as AssistantMsg } from "@openuidev/react-headless";
 import { useThread } from "@openuidev/react-headless";
@@ -363,11 +364,11 @@ function ThinkingPanel({
 
   const parts: ReactNode[] = [];
   if (isStreaming) {
-    parts.push("Working…");
+    parts.push("Sta scrivendo…");
   } else {
-    if (seconds) parts.push(`Worked for ${seconds}s`);
+    if (seconds) parts.push(`Ha lavorato ${seconds}s`);
     if (toolCallCount > 0) {
-      parts.push(`${toolCallCount} tool call${toolCallCount === 1 ? "" : "s"}`);
+      parts.push(`${toolCallCount} tool call`);
     }
     if (inputTokens > 0) {
       parts.push(
@@ -485,7 +486,7 @@ export function AssistantMessage({ message }: Props) {
   if (typeof message.content === "string" && message.content.startsWith(COMPACTION_SENTINEL)) {
     return (
       <CompactionDivider
-        label={message.content.slice(COMPACTION_SENTINEL.length) || "Context compacted"}
+        label={message.content.slice(COMPACTION_SENTINEL.length) || "Contesto compattato"}
       />
     );
   }
@@ -494,6 +495,7 @@ export function AssistantMessage({ message }: Props) {
   const isRunning = useThread((s) => s.isRunning);
   const processMessage = useThread((s) => s.processMessage);
   const updateMessage = useThread((s) => s.updateMessage);
+  const prefs = usePreferences();
 
   // Latch: a message can only be "streaming" during the run that originally
   // produced it. After RUN_FINISHED, ChatApp reloads history which remounts
@@ -764,7 +766,14 @@ export function AssistantMessage({ message }: Props) {
 
   return (
     <Shell.AssistantMessageContainer>
-      {timelineItems.length > 0 ? (
+      {!prefs.showAdvanced && isStreaming && timelineItems.length > 0 && renderedSegments.length === 0 ? (
+        <div className="mb-m flex items-center gap-2 px-1 text-sm text-text-neutral-tertiary">
+          <Loader2 size={14} className="animate-spin" />
+          Sta scrivendo…
+        </div>
+      ) : null}
+
+      {prefs.showAdvanced && timelineItems.length > 0 ? (
         <ThinkingPanel
           isStreaming={isStreaming}
           scrollBody={timelineItems.length > TIMELINE_SCROLL_THRESHOLD}
@@ -774,11 +783,6 @@ export function AssistantMessage({ message }: Props) {
           )}
           toolCallCount={toolTraceMap.size}
           {...(() => {
-            // Prefer authoritative counts from the gateway's chat:final usage
-            // (encoded as a `usage` timeline segment). Fallback to a char/4
-            // estimate for in-progress runs and historical messages where
-            // the segment isn't present (e.g. older runs, history reload
-            // paths that strip non-visible markers).
             if (runUsage) return runUsage;
             let inChars = 0;
             let outChars = (message.content ?? "").length;
@@ -800,7 +804,7 @@ export function AssistantMessage({ message }: Props) {
                 <TimelineRow
                   key={item.key}
                   status="neutral"
-                  category="Message"
+                  category="Messaggio"
                   summary={oneLineSummary(item.text)}
                 >
                   <div className={TRACE_MARKDOWN_CLASSES}>
@@ -817,7 +821,7 @@ export function AssistantMessage({ message }: Props) {
                 <TimelineRow
                   key={item.key}
                   status={isStreaming && isLast ? "pending" : "neutral"}
-                  category="Reasoning"
+                  category="Ragionamento"
                   summary={oneLineSummary(item.text)}
                   defaultOpen={isStreaming && isLast}
                 >
@@ -840,7 +844,7 @@ export function AssistantMessage({ message }: Props) {
                 key={item.key}
                 status={status}
                 category="Tool call"
-                summary={isPending ? `${trace.name} · running…` : trace.name}
+                summary={isPending ? `${trace.name} · in corso…` : trace.name}
               >
                 <ToolCallDetail
                   input={trace.request}
@@ -857,7 +861,7 @@ export function AssistantMessage({ message }: Props) {
       {renderedSegments}
 
       {errorMessage && (
-        <Callout variant="danger" title="Something went wrong" description={errorMessage} />
+        <Callout variant="danger" title="Qualcosa è andato storto" description={errorMessage} />
       )}
     </Shell.AssistantMessageContainer>
   );

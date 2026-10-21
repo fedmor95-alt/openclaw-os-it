@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "build": "next build",
+    "build:desktop": "cross-env DESKTOP=1 next build",
     "dev": "cross-env NEXT_OUTPUT=server next dev --port 18790",
     "start": "cross-env NEXT_OUTPUT=server next start --port 18790",
     "lint:check": "eslint ./src",

@@ -8,24 +8,24 @@ export type GatewayUrlValidation = { ok: true } | { ok: false; error: string };
  * a sync throw and surfaces UNREACHABLE.
  */
 export function validateGatewayUrl(raw: string): GatewayUrlValidation {
-  if (!raw) return { ok: false, error: "Gateway URL is required." };
+  if (!raw) return { ok: false, error: "L’URL del gateway è obbligatorio." };
   let parsed: URL;
   try {
     parsed = new URL(raw);
   } catch {
     return {
       ok: false,
-      error: "Not a valid URL. Use ws://host:port or wss://host:port.",
+      error: "URL non valido. Usa ws://host:porta oppure wss://host:porta.",
     };
   }
   if (parsed.protocol !== "ws:" && parsed.protocol !== "wss:") {
     return {
       ok: false,
-      error: `Unsupported protocol "${parsed.protocol}". Use ws:// for local or wss:// for remote.`,
+      error: `Protocollo non supportato "${parsed.protocol}". Usa ws:// in locale o wss:// in remoto.`,
     };
   }
   if (!parsed.hostname) {
-    return { ok: false, error: "URL is missing a hostname." };
+    return { ok: false, error: "Nell’URL manca l’hostname." };
   }
   return { ok: true };
 }

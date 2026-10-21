@@ -34,7 +34,7 @@ export function EmptyChatWelcome({ agentName }: { agentName?: string }) {
   // User-customized assistantName wins over the agent's own name; fall
   // back to the generic greeting if neither is set.
   const displayName = assistantName.trim() || agentName;
-  const greeting = displayName ? `Hi from ${displayName}` : "Hi there";
+  const greeting = displayName ? `Ciao, sono ${displayName}` : "Ciao";
 
   return (
     <div className="flex h-full min-h-[60vh] w-full flex-col items-center justify-center px-ml py-3xl">
@@ -46,8 +46,7 @@ export function EmptyChatWelcome({ agentName }: { agentName?: string }) {
           {greeting} <span aria-hidden>👋</span>
         </h2>
         <p className="mt-s max-w-md text-center font-body text-md text-text-neutral-secondary">
-          Ask me to build an app, schedule a recurring task, or pull data from a website. I can also
-          write artifacts (notes, tables, docs) and run them on a schedule.
+          Scrivi pure qui sotto. Posso aiutarti con messaggi, file e immagini — in italiano.
         </p>
 
         <div className="mt-2xl w-full">

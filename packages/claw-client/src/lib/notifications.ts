@@ -49,5 +49,5 @@ export type NotificationRecord = {
  * read history is preserved so users can scroll back through past runs.
  */
 export function shouldSurfaceNotification(notification: Pick<NotificationRecord, "kind">): boolean {
-  return notification.kind.startsWith("cron_");
+  return notification.kind.startsWith("cron_") || notification.kind === "thread_reply";
 }

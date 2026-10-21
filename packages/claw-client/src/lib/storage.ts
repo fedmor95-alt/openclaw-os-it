@@ -1,3 +1,5 @@
+import { DEFAULT_GATEWAY_URL } from "./defaults";
+
 export interface Settings {
   gatewayUrl: string;
   token?: string;
@@ -6,13 +8,27 @@ export interface Settings {
 
 const STORAGE_KEY = "claw-settings-v1";
 
+/** Impostazioni di default senza token (il token lo inserisce l’utente). */
+export function defaultSettings(): Settings {
+  return { gatewayUrl: DEFAULT_GATEWAY_URL };
+}
+
+/**
+ * Restituisce le impostazioni salvate, oppure i default (URL gateway Tailscale)
+ * se non c’è ancora nulla in localStorage. Il token resta undefined finché
+ * l’utente non lo inserisce.
+ */
 export function getSettings(): Settings | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
-    return JSON.parse(raw) as Settings;
+    if (!raw) return defaultSettings();
+    const parsed = JSON.parse(raw) as Settings;
+    if (!parsed.gatewayUrl) {
+      return { ...parsed, gatewayUrl: DEFAULT_GATEWAY_URL };
+    }
+    return parsed;
   } catch {
-    return null;
+    return defaultSettings();
   }
 }
 

@@ -1,47 +1,40 @@
 /**
- * Default starter prompts shown on an empty chat. Kept here (not in the
- * component) so future per-agent / per-route customization can pick a set
- * by id without touching the chat shell.
- *
- * `displayText` is what the user sees. `prompt` is what gets sent to the
- * model when clicked — `Shell.ConversationStarter` calls `processMessage`
- * with `{ role: "user", content: prompt }`.
+ * Prompt di avvio sulla chat vuota.
  */
+
 export interface ConversationStarter {
   displayText: string;
   prompt: string;
-  /** Visual accent — drives the icon + tile color on the empty-state list. */
   accent?: "info" | "accent" | "success" | "alert";
-  /** Lucide icon key picked by the renderer; falls back to Lightbulb. */
   iconKey?: "newspaper" | "radar" | "trending-up" | "search-check";
 }
 
 export const DEFAULT_STARTERS: ConversationStarter[] = [
   {
-    displayText: "Build a daily AI news digest",
+    displayText: "Riassumimi le novità di oggi",
     prompt:
-      "Build a daily AI news digest. Pull the latest AI news every morning from a few high-signal sources (Hacker News, The Verge, and the Anthropic and OpenAI blogs). Cluster the stories by topic, dedupe write-ups of the same launch, and render a single-page digest with section headers per topic and a one-line summary under each headline.",
+      "Riassumimi le novità più importanti di oggi su tecnologia e AI, in italiano, in modo chiaro e breve.",
     accent: "info",
     iconKey: "newspaper",
   },
   {
-    displayText: "Build a social monitoring board",
+    displayText: "Aiutami a pianificare la giornata",
     prompt:
-      "Build a social monitoring board. Track mentions of my product across Twitter/X, Reddit, and Hacker News. Show overall mention volume over time, a sentiment trend, the top voices driving the conversation, and a live feed of recent posts I can click through to the source.",
+      "Aiutami a pianificare la giornata: chiedimi priorità e impegni, poi proponi un piano realistico in italiano.",
     accent: "accent",
     iconKey: "radar",
   },
   {
-    displayText: "Build a finance dashboard with alerts",
+    displayText: "Spiegami qualcosa in modo semplice",
     prompt:
-      "Build a finance dashboard with alerts. Track my portfolio and surface market alerts. Show current holdings with P/L, a watchlist, today's movers, and a feed of price/news triggers I've configured. Refresh quotes during market hours and notify me when an alert fires.",
+      "Sono pronto: chiedimi di cosa voglio una spiegazione semplice e chiara, in italiano.",
     accent: "success",
     iconKey: "trending-up",
   },
   {
-    displayText: "Build an SEO dashboard with rankings",
+    displayText: "Controlla un testo che ti passo",
     prompt:
-      "Build an SEO dashboard with rankings. Track search rankings and surface content opportunities. Include keyword positions over time, top movers, competitor gaps, and a prioritized backlog of topics to write about — each with target keywords and an estimated traffic upside.",
+      "Chiedimi di incollare un testo e poi correggilo o migliorarlo in italiano, senza cambiare il senso.",
     accent: "alert",
     iconKey: "search-check",
   },

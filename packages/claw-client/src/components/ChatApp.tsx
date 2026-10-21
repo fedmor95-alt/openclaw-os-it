@@ -5,7 +5,7 @@ import { ChatAppProvider, type ChatAppContextValue } from "@/components/chat/Cha
 import { HomeComposer } from "@/components/chat/HomeComposer";
 import { MainContent, type Route } from "@/components/chat/MainContent";
 import { ThreadArea } from "@/components/chat/ThreadArea";
-import { AppSidebar } from "@/components/layout/AppSidebar";
+import { SimpleAgentsSidebar } from "@/components/layout/SimpleAgentsSidebar";
 import { MobileShell } from "@/components/layout/MobileShell";
 import { MobileNotificationInboxDrawer } from "@/components/mobile/MobileNotificationInboxDrawer";
 import { MobileSettingsDialog } from "@/components/mobile/MobileSettingsDialog";
@@ -43,7 +43,15 @@ import {
   uploadMetaToThreadUpload,
   type ThreadWorkspaceState,
 } from "@/lib/session-workspace";
-import { getSettings } from "@/lib/storage";
+import { playCompletionChime } from "@/lib/chime";
+import {
+  ensureNotificationPermission,
+  isWindowInBackground,
+  notifyAgentReply,
+} from "@/lib/desktop-notify";
+import { getPreferences } from "@/lib/preferences";
+import { defaultSettings, getSettings, saveSettings } from "@/lib/storage";
+import { bumpUnread, clearUnread } from "@/lib/unread";
 import type { ClawThread } from "@/types/claw-thread";
 import type { ModelChoice, SessionRow } from "@/types/gateway-responses";
 import {
@@ -57,7 +65,7 @@ import { Shell, ThemeProvider } from "@openuidev/react-ui";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 const LOGO_URL = "https://www.openui.com/favicon.svg";
-const ENABLE_THREAD_REPLY_NOTIFICATIONS = false;
+const ENABLE_THREAD_REPLY_NOTIFICATIONS = true;
 const THEME_STORAGE_KEY = "claw:theme";
 
 interface ChatAppInnerProps {
@@ -368,25 +376,47 @@ function ChatAppInner({
     const finalize = async () => {
       for (const [sessionKey, tracker] of completedTrackers) {
         trackers.delete(sessionKey);
-        if (!tracker.leftThread) continue;
+        const awayFromThread = tracker.leftThread;
+        const windowAway = isWindowInBackground();
+        if (!awayFromThread && !windowAway) continue;
         const threadNotificationIds = collectThreadNotificationIds(tracker.threadId, sessionKey);
         const alreadyHasSpecificNotification = Array.from(threadNotificationIds).some(
           (id) => !tracker.baselineNotificationIds.has(id),
         );
         if (alreadyHasSpecificNotification) continue;
         const updatedAt = sessionMeta.get(sessionKey)?.updatedAt ?? Date.now();
-        await onUpsertNotification({
-          dedupeKey: `thread-reply:${tracker.threadId}:${updatedAt}`,
-          kind: "thread_reply",
-          title: tracker.title,
-          message: "A background reply finished while you were away.",
-          target: { view: "chat", sessionId: tracker.threadId },
-          source: { agentId: tracker.agentId, sessionKey },
-        });
+        if (awayFromThread) bumpUnread(tracker.agentId);
+        const prefs = getPreferences();
+        if (prefs.notificationSound) playCompletionChime();
+        if (prefs.desktopNotifications && windowAway) {
+          void notifyAgentReply({
+            agentName: tracker.title || tracker.agentId,
+            body: "Nuova risposta pronta",
+            onClick: () => navigate({ view: "chat", sessionId: tracker.threadId }),
+          });
+        }
+        if (awayFromThread) {
+          await onUpsertNotification({
+            dedupeKey: `thread-reply:${tracker.threadId}:${updatedAt}`,
+            kind: "thread_reply",
+            title: tracker.title,
+            message: "Una risposta è arrivata mentre non stavi guardando questa chat.",
+            target: { view: "chat", sessionId: tracker.threadId },
+            source: { agentId: tracker.agentId, sessionKey },
+          });
+        }
       }
     };
     void finalize();
   }, [collectThreadNotificationIds, onUpsertNotification, sessionMeta]);
+
+  // Azzera i non letti quando apri la chat di un agente.
+  useEffect(() => {
+    if (route.view !== "chat") return;
+    const thread = (threads as ClawThread[]).find((t) => t.id === route.sessionId);
+    const agentId = thread?.clawAgentId ?? thread?.id;
+    if (agentId) clearUnread(agentId);
+  }, [route, threads]);
 
   // Sync hash route → selected thread.
   useEffect(() => {
@@ -766,20 +796,12 @@ function ChatAppInner({
     <ChatAppProvider value={contextValue}>
       <Shell.Container agentName="Claw" logoUrl={LOGO_URL}>
         <RouteSidebarSync collapse={route.view === "app" || route.view === "artifact"} />
-        <AppSidebar
+        <SimpleAgentsSidebar
           connectionState={connectionState}
           onSettingsClick={onSettingsClick}
-          createSession={createSession}
-          renameSession={renameSession}
-          deleteSession={deleteSession}
-          apps={appList}
-          artifacts={artifactList}
-          unreadNotificationCount={unreadNotificationCount}
-          hiddenThreadIds={hiddenRefinementThreadIds}
-          pinnedAppIds={pinnedAppIds}
-          onOpenCommandPalette={() => setPaletteOpen(true)}
           themeMode={themeMode}
           onToggleThemeMode={onToggleThemeMode}
+          hiddenThreadIds={hiddenRefinementThreadIds}
         />
         <MainContent route={route} homeComposer={homeComposer} threadArea={threadArea} />
         {overlays}
@@ -921,9 +943,16 @@ export default function ChatApp() {
     [apps, refreshAppList],
   );
 
-  // Auto-open settings on first visit (no gateway URL configured)
+  // Prima visita: persiste l’URL predefinito e apri impostazioni se manca il token.
   useEffect(() => {
-    if (!getSettings()?.gatewayUrl) setSettingsOpen(true);
+    const existing = getSettings() ?? defaultSettings();
+    saveSettings(existing);
+    if (!existing.token && !existing.deviceToken) {
+      setSettingsOpen(true);
+    }
+    if (getPreferences().desktopNotifications) {
+      void ensureNotificationPermission();
+    }
   }, []);
 
   const { adaptedFetchThreadList, adaptedLoadThread } = useChatProviderAdapters({
@@ -1037,10 +1066,11 @@ export default function ChatApp() {
                 </svg>
               </div>
               <h2 className="text-lg font-bold text-text-neutral-primary mb-s">
-                Device Pairing Required
+                Approvazione dispositivo
               </h2>
               <p className="text-sm text-text-neutral-tertiary mb-ml">
-                This device needs to be approved on your server before it can connect.
+                Questo computer deve essere approvato sul gateway prima di connettersi. Esegui il
+                comando qui sotto sul server OpenClaw.
               </p>
               <div className="relative group">
                 <code className="block px-m py-s pr-10 bg-sunk-light rounded-s text-xs font-code text-text-neutral-secondary break-all select-all text-left">
@@ -1052,7 +1082,7 @@ export default function ChatApp() {
                   onClick={() => {
                     navigator.clipboard.writeText(`openclaw devices approve ${pairingDeviceId}`);
                   }}
-                  title="Copy to clipboard"
+                  title="Copia negli appunti"
                 >
                   <svg
                     className="w-3.5 h-3.5"
@@ -1070,7 +1100,7 @@ export default function ChatApp() {
                 </button>
               </div>
               <p className="text-xs text-text-neutral-tertiary mt-ml">
-                Retrying automatically&hellip;
+                Nuovo tentativo automatico…
               </p>
             </div>
           </div>

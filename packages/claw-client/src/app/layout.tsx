@@ -5,14 +5,14 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Claw",
-  description: "Generative UI client for OpenClaw",
+  title: "OpenClaw",
+  description: "Client desktop semplice per OpenClaw",
   icons: { icon: "/favicon.svg", apple: "/favicon.svg" },
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Claw",
+    title: "OpenClaw",
   },
 };
 
@@ -28,7 +28,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className="h-full" suppressHydrationWarning>
+    <html lang="it" className="h-full" suppressHydrationWarning>
       <body className="h-full bg-background antialiased">
         <ServiceWorkerRegistrar />
         {children}

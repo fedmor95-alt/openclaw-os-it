@@ -11,12 +11,16 @@ packages:
 # (list); pnpm 11+ reads `allowBuilds` (map). Either pnpm version honors its
 # field and ignores the other.
 onlyBuiltDependencies:
+  - electron
+  - electron-winstaller
   - esbuild
   - koffi
   - protobufjs
   - sharp
   - workerd
 allowBuilds:
+  electron: true
+  electron-winstaller: true
   esbuild: true
   koffi: true
   protobufjs: true
